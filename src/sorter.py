@@ -19,7 +19,7 @@ class Sorter(object):
     """ 用于打文件排序的实现
     """
 
-    def __init__(self, file_paths, key_func, delimiter='\0', file_is_sorted=False):
+    def __init__(self, file_paths, key_func=lambda x: x.split('\0')[0], delimiter='\0', file_is_sorted=False):
         """
         Args:
             key_func: 获取key的函数, 输入为一条数据, 对于文件来说是一行文本
@@ -97,14 +97,14 @@ class Sorter(object):
         if self._file_is_sorted:
             emitted_counter = 0
             iterables = [self._build_file_iterator(f) for f in self._sorted_file_paths]
-            for _, value in heapq.merge(*iterables):
+            for key, values in heapq.merge(*iterables):
                 emitted_counter += 1
                 if emitted_counter % 100000 == 0:
                     logger.debug("Emit item in sorter. [sorter={sorter} emitted={emitted} "
                                  "process={process:.2f}%]"
                                  .format(sorter=self, emitted=emitted_counter,
                                          process=100.0 * emitted_counter / self._total_number))
-                yield value
+                yield key, values
             logger.debug("Exhauseted iterator in sorter. [total_line_number={line_number} "
                          "total_size={size}]"
                          .format(line_number=self._total_number, size=self._total_size))

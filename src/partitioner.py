@@ -68,7 +68,7 @@ class SplitStrategy(object):
         output_fd = self._get_fd(item)
         try:
             if isinstance(item, (types.ListType, types.TupleType)):
-                print(self._delimiter.join(item), file=output_fd)
+                print(self._delimiter.join([str(i) for i in item]), file=output_fd)
             elif isinstance(item, types.DictionaryType):
                 print(json.dumps(item), file=output_fd)
             elif isinstance(item, types.StringTypes):
@@ -90,7 +90,7 @@ class HashSplitStrategy(SplitStrategy):
     """ hash的策略来进行数据分割
     """
 
-    def __init__(self, key_func, delimiter='\0', hash_func=None):
+    def __init__(self, key_func=lambda x: x[0], delimiter='\0', hash_func=None):
         super(HashSplitStrategy, self).__init__(delimiter=delimiter)
         self._key_func = key_func
         # 默认的简单的hash方法
@@ -119,7 +119,7 @@ class Paritioner(object):
     """ 切割数据源的数据
     """
 
-    def __init__(self, source, output_count, output_paths, split_strategy, line_handler=None):
+    def __init__(self, env, source, output_count, output_paths, split_strategy, line_handler=None):
         """
         Args:
             source: 数据源, 可以通过迭代获取数据的类型即可
@@ -128,6 +128,7 @@ class Paritioner(object):
             split_strategy: 切割策略
             line_handler: 行处理函数对象
         """
+        self._env = env
         self._source = source
         self._counter = 0
         self._line_handler = line_handler
@@ -137,7 +138,7 @@ class Paritioner(object):
         self._output_paths = output_paths
         self._output_paths_cycle = itertools.cycle(output_paths)
         self._output_count = output_count
-        self._output_file_paths = [self._get_output_path(source.name)
+        self._output_file_paths = [self._get_output_path(self._env.name)
                                    for _ in xrange(self._output_count)]
 
         self._check_path_existence()
@@ -147,6 +148,10 @@ class Paritioner(object):
         """
         for p in self._output_paths:
             utils.mkdir(p)
+
+    @property
+    def output_file_paths_iterator(self):
+        return [(l.split(self._split_strategy._delimiter) for l in f) for f in self._output_file_paths]
 
     @property
     def output_file_paths(self):
@@ -173,10 +178,9 @@ class Paritioner(object):
         """ 迭代split后的全部数据, 没有做过多处理
         """
         if self._is_invoked:
-            for file_path in self.output_file_paths:
-                with open(file_path) as handle:
-                    for l in handle:
-                        yield l
+            for handle in self.output_file_paths:
+                for l in handle:
+                    yield l
 
     def __repr__(self):
-        return '<Splitter source={source}>'.format(source=self._source)
+        return '<Paritioner source={source}>'.format(source=self._source)

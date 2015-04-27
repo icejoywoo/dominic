@@ -233,3 +233,36 @@ class MongoDBSource(Source):
 
     def _get_size(self, _):
         return self._avg_obj_size
+
+
+class SourceFactory(object):
+    """ 根据env来构建对应的数据源
+    """
+
+    mappings = {
+        'file': FileSource,
+        'mongo': MongoDBSource,
+    }
+
+    def __init__(self, env):
+        self._env = env
+        self._builder = self.mappings[self._env._input_type]
+        self._kwargs = getattr(self, '_get_%s_kwargs' % self._env._input_type)()
+
+    def _get_file_kwargs(self):
+        return {
+            'name': self._env.name,
+            'file_paths': self._env.input_path,
+        }
+
+    def _get_mongo_kwargs(self):
+        return {
+            'name': self._env.name,
+            'mongo_uri': self._env.mongo_uri,
+            'collection': self._env.collection,
+            'database': self._env.database,
+            'query': self._env.query,
+        }
+
+    def get(self):
+        return self._builder(**self._kwargs)

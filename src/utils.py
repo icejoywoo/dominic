@@ -7,6 +7,7 @@
 
 from __future__ import absolute_import, division, print_function, with_statement
 import logging
+import os
 
 
 logger = logging.getLogger('dominic.internal')
@@ -54,3 +55,10 @@ def safeunicode(obj, encoding='utf-8'):
             return u""
     else:
         return str(obj).decode(encoding, 'ignore')
+
+
+def mkdir(p):
+    try:
+        os.makedirs(p)
+    except:
+        pass

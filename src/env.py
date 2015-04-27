@@ -34,6 +34,21 @@ class Env(object):
         else:
             self._temp_path = os.path.join(tempfile.gettempdir(), 'dominic_%d' % int(time.time()))
 
+        if 'name' in kwargs:
+            self._name = kwargs.pop('name')
+        else:
+            logger.error("name is empty!")
+
+        if 'input_type' in kwargs:
+            self._input_type = kwargs.pop('input_type')
+        else:
+            self._input_type = 'file'
+
+        if 'mem_limit' in kwargs:
+            self._mem_limit = kwargs.pop('mem_limit')
+        else:
+            self._mem_limit = 100 * 1024 * 1024
+
     @property
     def input_path(self):
         return self._input_path
@@ -45,3 +60,11 @@ class Env(object):
     @property
     def temp_path(self):
         return self._temp_path
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def mem_limit(self):
+        return self._mem_limit
